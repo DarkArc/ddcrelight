@@ -75,6 +75,7 @@ async def async_set_brightness(monitors, new_brightness):
   awaitables = []
   for monitor in monitors:
     brightness = await monitor.async_get_brightness()
+    print(f"{brightness} -> {new_brightness}")
     if brightness == new_brightness:
       continue
     awaitables.append(monitor.async_set_brightness(new_brightness))

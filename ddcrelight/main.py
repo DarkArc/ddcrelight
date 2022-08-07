@@ -45,21 +45,22 @@ def parse_args():
 
   return parser.parse_args()
 
-def get_average_light_value(light_sensor, *, num_samples):
-  total_light = 0
+def get_light_value(light_sensor, *, num_samples):
+  readings = []
   for _ in range(num_samples):
     reading = light_sensor.get_value()
 
     # Sleep so we collect different samples
     print(reading)
-    time.sleep(.25)
+    time.sleep(.5)
 
-    total_light += reading
+    readings.append(reading)
 
-  return total_light / num_samples
+  readings.sort()
+  return readings[num_samples // 2]
 
 def _automatic_update(light_sensor, monitors):
-  ambient_light = get_average_light_value(light_sensor, num_samples = 3)
+  ambient_light = get_light_value(light_sensor, num_samples = 3)
   set_brightness(monitors, interpolate_brightness(ambient_light))
 
 def main():
@@ -73,9 +74,9 @@ def main():
 
   monitors = detect_monitors()
 
-  if args.new_brightness:
+  if args.new_brightness != None:
     set_brightness(monitors, args.new_brightness)
-    ambient_light = get_average_light_value(light_sensor, num_samples = 1)
+    ambient_light = get_light_value(light_sensor, num_samples = 1)
     record_brightness(ambient_light, args.new_brightness)
   else:
     _automatic_update(light_sensor, monitors)
