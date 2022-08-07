@@ -18,7 +18,7 @@
 import argparse
 import time
 
-from .ddciface import set_brightness
+from .ddciface import detect_monitors, set_brightness
 from .lightai import record_brightness, interpolate_brightness
 from .lightsensor import get_light_provider
 
@@ -35,22 +35,20 @@ def parse_args():
       'adjusted based on the current light levels and previous usage).'
     )
   )
+  parser.add_argument(
+    '--reinvoke',
+    dest = 'reinvoke_delay',
+    default = 0,
+    type = int,
+    help = 'Run repeating with the given delay'
+  )
 
   return parser.parse_args()
-
-def _get_light_value(light_sensor):
-  ambient_light = light_sensor.get_value()
-
-  if ambient_light == -1:
-    print('Light level read failed.')
-    exit(1)
-
-  return ambient_light
 
 def get_average_light_value(light_sensor, *, num_samples):
   total_light = 0
   for _ in range(num_samples):
-    reading = _get_light_value(light_sensor)
+    reading = light_sensor.get_value()
 
     # Sleep so we collect different samples
     print(reading)
@@ -59,6 +57,10 @@ def get_average_light_value(light_sensor, *, num_samples):
     total_light += reading
 
   return total_light / num_samples
+
+def _automatic_update(light_sensor, monitors):
+  ambient_light = get_average_light_value(light_sensor, num_samples = 3)
+  set_brightness(monitors, interpolate_brightness(ambient_light))
 
 def main():
   args = parse_args()
@@ -69,10 +71,15 @@ def main():
     print(f"Light sensor setup failed: {error_message}.")
     exit(1)
 
-  ambient_light = get_average_light_value(light_sensor, num_samples = 3)
+  monitors = detect_monitors()
 
   if args.new_brightness:
-    set_brightness(args.new_brightness)
+    set_brightness(monitors, args.new_brightness)
+    ambient_light = get_average_light_value(light_sensor, num_samples = 1)
     record_brightness(ambient_light, args.new_brightness)
   else:
-    set_brightness(interpolate_brightness(ambient_light))
+    _automatic_update(light_sensor, monitors)
+
+  while args.reinvoke_delay != 0:
+    time.sleep(args.reinvoke_delay)
+    _automatic_update(light_sensor, monitors)

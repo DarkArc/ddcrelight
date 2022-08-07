@@ -53,7 +53,7 @@ def _save_history(history):
 
 def _get_stable_history(history):
   last_update = datetime.fromisoformat(history['last_updated'])
-  if last_update + timedelta(minutes = 15) > datetime.now():
+  if last_update + timedelta(minutes = 15) <= datetime.now():
     return history['newest']
   return history['stable']
 
@@ -97,7 +97,6 @@ def _update_history(history, ambient_light, monitor_brightness):
 
     50 60
      5 25
-
   '''
 
   # Get the stable history, and create a new history to modify.
@@ -169,6 +168,11 @@ def _interpolate_brightness(active_history, ambient_light):
     key = lambda x: x[1]
   )
 
+  # If the light level guide is higher than any value previously seen, just use
+  # the would be lower bound.
+  if light_level_guide >= len(active_history):
+    return active_history[light_level_guide - 1][0]
+
   # Check to see if there's anything to "go back to", if there's not, just use
   # the upper bound as the lower bound.
   prev_light_level_guide = light_level_guide - 1
@@ -178,9 +182,6 @@ def _interpolate_brightness(active_history, ambient_light):
 
   lower_bound = active_history[prev_light_level_guide]
   upper_bound = active_history[light_level_guide]
-
-  print(lower_bound)
-  print(upper_bound)
 
   lower_ambient_bound = lower_bound[1]
   upper_ambient_bound = upper_bound[1]
@@ -199,7 +200,7 @@ def _interpolate_brightness(active_history, ambient_light):
   adjustable_range = upper_brightness - lower_brightness
 
   # Create the adjusted value
-  return lower_brightness + (adjustable_range * relative_percentage)
+  return lower_brightness + round(adjustable_range * relative_percentage)
 
 def interpolate_brightness(ambient_light):
   history = _load_history()

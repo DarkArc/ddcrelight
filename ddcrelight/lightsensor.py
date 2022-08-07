@@ -22,20 +22,21 @@ from yoctopuce.yocto_lightsensor import YLightSensor
 
 class YoctoLightSensor:
   def __init__(self):
-    pass
+    self.light_sensor = None
 
   def init(self):
     err_msg = YRefParam()
-    if YAPI.RegisterHub('usb', err_msg) != YAPI.SUCCESS:
+    if YAPI.RegisterHub('127.0.0.1', err_msg) != YAPI.SUCCESS:
       return err_msg.value
+
+    self.light_sensor = YLightSensor.FirstLightSensor()
+    if self.light_sensor == None:
+      return 'no light sensor could be found'
+
     return None
 
   def get_value(self):
-    light_sensor = YLightSensor.FirstLightSensor()
-    if light_sensor == None:
-      return -1
-
-    return light_sensor.get_currentValue()
+    return self.light_sensor.get_currentValue()
 
 def get_light_provider():
   return YoctoLightSensor()
