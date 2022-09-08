@@ -20,8 +20,7 @@ permissions:
 https://www.ddcutil.com/i2c_permissions/
 ```
 
-Then a timer should be configured to update the brightness at the desired
-checking interval.  For instance, to adjust brightness every minute:
+Then a daemon should be setup:
 
 ddcrelight.service:
 ```
@@ -29,18 +28,10 @@ ddcrelight.service:
 Description=Update monitor brightness intelligently using light sensors.
 
 [Service]
-ExecStart=<path-to-script>/ddcrelight
-```
-
-ddcrelight.timer:
-```
-[Unit]
-Description=Run ddcrelight every minute.
-
-[Timer]
-OnBootSec=1min
-OnUnitActiveSec=5min
+ExecStart=<path-to-script>/ddcrelight daemon
+Restart=on-failure
+RestartSec=5
 
 [Install]
-WantedBy=timers.target
+WantedBy=default.target
 ```
