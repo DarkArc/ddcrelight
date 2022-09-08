@@ -71,26 +71,25 @@ class DDCMonitor:
   def set_brightness(self, monitor_brightness):
     asyncio.run(self.async_set_brightness(monitor_brightness))
 
-async def _async_set_brightness(monitor, new_brightness):
-  brightness = await monitor.async_get_brightness()
-  print(f"{brightness} -> {new_brightness}")
-  if brightness == new_brightness:
-    return
+async def _async_adjust_brightness(monitor, target_brightness):
+  current_brightness = await monitor.async_get_brightness()
+  if current_brightness == target_brightness:
+    return False
 
-  change_unit = 1 if new_brightness > brightness else -1
-  for _ in range(abs(brightness - new_brightness)):
-    brightness += change_unit
-    await monitor.async_set_brightness(brightness)
+  change_unit = 1 if target_brightness > current_brightness else -1
+  await monitor.async_set_brightness(current_brightness + change_unit)
+  return True
 
-async def async_set_brightness(monitors, new_brightness):
+async def async_adjust_brightness(monitors, target_brightness):
   awaitables = []
   for monitor in monitors:
-    awaitables.append(_async_set_brightness(monitor, new_brightness))
+    awaitables.append(_async_adjust_brightness(monitor, target_brightness))
 
-  await asyncio.gather(*awaitables)
+  adjustments_made = await asyncio.gather(*awaitables)
+  return any(adjustments_made)
 
-def set_brightness(monitors, new_brightness):
-  asyncio.run(async_set_brightness(monitors, new_brightness))
+def adjust_brightness(monitors, target_brightness):
+  return asyncio.run(async_adjust_brightness(monitors, target_brightness))
 
 async def _run_detect():
   args = ['ddcutil', 'detect']

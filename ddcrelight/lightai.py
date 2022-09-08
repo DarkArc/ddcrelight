@@ -16,6 +16,7 @@
 # along with ddcrelight.  If not, see <https://www.gnu.org/licenses/>.
 
 import bisect
+import fcntl
 import json
 import os
 
@@ -39,17 +40,31 @@ def _get_init_history():
     'stable': [[100, 0]]
   }
 
+def _get_history_mtime():
+  history_file = _get_history_file()
+  if not os.path.exists(history_file):
+    return 0
+  return os.path.getmtime(history_file)
+
 def _load_history():
   history_file = _get_history_file()
   if not os.path.exists(history_file):
     return _get_init_history()
-  with open(history_file, 'r') as hist_file:
-    return json.load(hist_file)
+  with open(history_file, 'r+') as hist_file:
+    try:
+      fcntl.lockf(hist_file, fcntl.LOCK_EX)
+      return json.load(hist_file)
+    finally:
+      fcntl.lockf(hist_file, fcntl.LOCK_UN)
 
 def _save_history(history):
   history_file = _get_history_file(mkdirs = True)
   with open(history_file, 'w') as hist_file:
-    json.dump(history, hist_file)
+    try:
+      fcntl.lockf(hist_file, fcntl.LOCK_EX)
+      json.dump(history, hist_file)
+    finally:
+      fcntl.lockf(hist_file, fcntl.LOCK_UN)
 
 def _get_stable_history(history):
   last_update = datetime.fromisoformat(history['last_updated'])
@@ -205,3 +220,16 @@ def _interpolate_brightness(active_history, ambient_light):
 def interpolate_brightness(ambient_light):
   history = _load_history()
   return _interpolate_brightness(history['newest'], ambient_light)
+
+class BrightnessInterpolator:
+  def __init__(self):
+    self._history = _load_history()
+    self._history_load_time = _get_history_mtime()
+
+  def interpolate(self, ambient_light):
+    # Potentially reload the history if the stored history time is before the
+    # current history modification time.
+    if self._history_load_time < _get_history_mtime():
+      self._history = _load_history()
+
+    return _interpolate_brightness(self._history['newest'], ambient_light)
