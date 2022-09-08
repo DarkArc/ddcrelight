@@ -78,10 +78,9 @@ async def _async_set_brightness(monitor, new_brightness):
     return
 
   change_unit = 1 if new_brightness > brightness else -1
-  for delta in range(abs(brightness - new_brightness)):
-    await monitor.async_set_brightness(
-      brightness + (delta * change_unit)
-    )
+  for _ in range(abs(brightness - new_brightness)):
+    brightness += change_unit
+    await monitor.async_set_brightness(brightness)
 
 async def async_set_brightness(monitors, new_brightness):
   awaitables = []
