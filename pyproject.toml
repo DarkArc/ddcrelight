@@ -7,7 +7,7 @@ name = "ddcrelight"
 description = 'Update monitor brightness intelligently using the DDC protocol.'
 readme = "README.md"
 requires-python = ">=3.7"
-license = "MIT"
+license = "GPL-3.0+"
 keywords = []
 authors = [
   { name = "Wyatt Childers", email = "wchilders@nearce.com" },
