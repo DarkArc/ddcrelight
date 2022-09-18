@@ -1,3 +1,5 @@
+# ddcrelight
+
 ## Requirements
 
 - A yoctopuce light sensor (https://www.yoctopuce.com)
@@ -34,4 +36,21 @@ RestartSec=5
 
 [Install]
 WantedBy=default.target
+```
+
+## Usage
+
+```
+usage: ddcrelight [-h] {daemon,set-brightness} ...
+
+Update monitor brightness intelligently.
+
+positional arguments:
+  {daemon,set-brightness}
+                        sub-command help
+    daemon              run the daemon
+    set-brightness      update the brightness database for the current light level
+
+options:
+  -h, --help            show this help message and exit
 ```
